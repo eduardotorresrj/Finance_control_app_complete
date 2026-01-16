@@ -365,7 +365,7 @@ Abra um Pull Request
 Este projeto está sob a licença MIT. Veja o arquivo LICENSE para detalhes.
 
 👨‍💻 Autor
-Eduardo Torres - @eduardotorresrj
+Carlos Eduardo Torres - @eduardotorresrj
 
 🙏 Agradecimentos
 Flask - O framework web usado
