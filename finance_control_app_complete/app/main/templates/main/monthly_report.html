@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Relatório Mensal - {{ "%02d"|format(month) }}/{{ year }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #4f46e5; border-bottom: 3px solid #4f46e5; padding-bottom: 10px; }
+    h2 { color: #1f2937; margin-top: 30px; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th { background-color: #f3f4f6; padding: 12px; text-align: left; border: 1px solid #e5e7eb; }
+    td { padding: 10px; border: 1px solid #e5e7eb; }
+    .income { color: #10b981; font-weight: bold; }
+    .expense { color: #ef4444; font-weight: bold; }
+    .summary-box { background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .summary-item { display: inline-block; margin: 10px 30px 10px 0; }
+    .summary-label { font-size: 14px; color: #6b7280; }
+    .summary-value { font-size: 24px; font-weight: bold; }
+    .category-list { list-style: none; padding: 0; }
+    .category-list li { padding: 8px; background-color: #f3f4f6; margin: 5px 0; border-radius: 4px; }
+    .positive { color: #10b981; }
+    .negative { color: #ef4444; }
+
+    /* NOVO ESTILO PARA GRÁFICO DE BARRAS */
+    .chart-container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin: 20px 0;
+    }
+    .bars-container {
+      display: flex;
+      align-items: flex-end;
+      height: 200px;
+      margin: 30px 0 10px 0;
+      padding: 0 20px;
+      border-bottom: 2px solid #e5e7eb;
+      position: relative;
+    }
+    .bar-item {
+      flex: 1;
+      margin: 0 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .bar {
+      width: 40px;
+      background: linear-gradient(to top, #4f46e5, #6366f1);
+      border-radius: 4px 4px 0 0;
+      transition: height 0.3s ease;
+      position: relative;
+    }
+    .bar-value {
+      position: absolute;
+      top: -25px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #1f2937;
+    }
+    .bar-label {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #6b7280;
+      text-align: center;
+      font-weight: 500;
+    }
+    .y-axis {
+      position: absolute;
+      left: -10px;
+      top: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #6b7280;
+    }
+    .chart-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1f2937;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Relatório Mensal - {{ "%02d"|format(month) }}/{{ year }}</h1>
+  <p><strong>Usuário:</strong> {{ user.name if user.name else user.email }}</p>
+  <p><strong>Gerado em:</strong> {{ current_date.strftime('%d/%m/%Y') }}</p>
+
+  <div class="summary-box">
+    <h2>Resumo Financeiro</h2>
+    <div class="summary-item">
+      <div class="summary-label">💰 Total de Receitas</div>
+      <div class="summary-value income">R$ {{ "%.2f"|format(total_income) }}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">💸 Total de Despesas</div>
+      <div class="summary-value expense">R$ {{ "%.2f"|format(total_expense) }}</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-label">💵 Saldo do Mês</div>
+      <div class="summary-value {% if balance >= 0 %}positive{% else %}negative{% endif %}">
+        R$ {{ "%.2f"|format(balance) }}
+      </div>
+    </div>
+    {% if total_income > 0 %}
+    <div class="summary-item">
+      <div class="summary-label">📈 Taxa de Economia</div>
+      <div class="summary-value {% if (balance / total_income * 100) >= 20 %}positive{% elif (balance / total_income * 100) >= 10 %}income{% else %}negative{% endif %}">
+        {{ "%.1f"|format(balance / total_income * 100) }}%
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- NOVO GRÁFICO DE BARRAS -->
+  {% if top_categories %}
+  <div class="chart-container">
+    <div class="chart-title">📈 Distribuição de Gastos por Categoria</div>
+    <div class="bars-container">
+      <div class="y-axis">
+        {% set max_value = top_categories | map(attribute='1') | max %}
+        <span>R$ {{ "%.0f"|format(max_value) }}</span>
+        <span>R$ {{ "%.0f"|format(max_value * 0.75) }}</span>
+        <span>R$ {{ "%.0f"|format(max_value * 0.5) }}</span>
+        <span>R$ {{ "%.0f"|format(max_value * 0.25) }}</span>
+        <span>R$ 0</span>
+      </div>
+      {% for category, amount in top_categories %}
+      <div class="bar-item">
+        <div class="bar" style="height: {{ (amount / max_value * 100) }}%;">
+          <div class="bar-value">R$ {{ "%.0f"|format(amount) }}</div>
+        </div>
+        <div class="bar-label">{{ category }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if top_categories %}
+  <h2>🏆 Top 5 Categorias de Gastos</h2>
+  <ul class="category-list">
+    {% for category, amount in top_categories %}
+    <li><strong>{{ category }}:</strong> R$ {{ "%.2f"|format(amount) }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <h2>📝 Todas as Transações do Mês</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Tipo</th>
+        <th>Categoria</th>
+        <th>Descrição</th>
+        <th>Forma de Pagamento</th>
+        <th style="text-align: right;">Valor</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in transactions %}
+      <tr>
+        <td>{{ t.date.strftime('%d/%m/%Y') }}</td>
+        <td>{% if t.type == 'income' %}💰 Receita{% else %}💸 Despesa{% endif %}</td>
+        <td>{{ t.category }}</td>
+        <td>{{ t.description if t.description else '-' }}</td>
+        <td>
+          {% if t.payment_method == 'dinheiro' %}💵 Dinheiro
+          {% elif t.payment_method == 'debito' %}💳 Débito
+          {% elif t.payment_method == 'credito' %}💳 Crédito
+          {% elif t.payment_method == 'pix' %}📱 PIX
+          {% elif t.payment_method == 'cartao_alimentacao' %}🍽️ Cartão Alimentação
+          {% else %}-{% endif %}
+        </td>
+        <td style="text-align: right;" class="{% if t.type == 'income' %}income{% else %}expense{% endif %}">
+          {% if t.type == 'income' %}+{% else %}-{% endif %} R$ {{ "%.2f"|format(t.amount) }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div style="margin-top: 40px; padding: 20px; background-color: #f3f4f6; border-radius: 8px;">
+    <p style="margin: 0; color: #6b7280; font-size: 14px;">
+      <strong>💡 Dica:</strong> Este relatório foi gerado automaticamente no dia 1º do mês.
+      Para visualizar análises mais detalhadas, acesse a página de Análise no sistema.
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finance Control - Controle Financeiro Inteligente</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="/static/css/custom.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/static/js/currency-formatter.js"></script>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">
+      <i class="bi bi-wallet2"></i> Finance Control
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        {% if current_user.is_authenticated %}
+        <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="/analytics"><i class="bi bi-graph-up"></i> Análise</a></li>
+        <li class="nav-item"><a class="nav-link" href="/reports"><i class="bi bi-file-earmark-text"></i> Relatórios</a></li>
+        <li class="nav-item"><a class="nav-link" href="/profile"><i class="bi bi-person-circle"></i> Perfil</a></li>
+        <li class="nav-item"><a class="nav-link" href="/auth/logout"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
+        {% else %}
+        <li class="nav-item"><a class="nav-link" href="/auth/login"><i class="bi bi-box-arrow-in-right"></i> Entrar</a></li>
+        <li class="nav-item"><a class="nav-link" href="/auth/register"><i class="bi bi-person-plus"></i> Registrar</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="container mt-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{category}} alert-dismissible fade show" role="alert">
+          <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Fechar alerta automaticamente após 1 segundo
+  window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      document.querySelectorAll('.alert').forEach(function(alertEl) {
+        var bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
+        bsAlert.close();
+      });
+    }, 1000);
+  });
+</script>
+</body>
+</html>

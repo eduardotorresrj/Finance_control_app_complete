@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="hero-section fade-in">
+  <h1>💰 Controle Financeiro Inteligente</h1>
+  <p class="lead">Gerencie suas finanças de forma simples e eficiente. Registre receitas e despesas, acompanhe relatórios detalhados e tome decisões mais inteligentes.</p>
+  <div class="mt-4">
+    <a class="btn btn-primary btn-lg me-3" href="/auth/register">
+      <i class="bi bi-rocket-takeoff"></i> Começar Agora
+    </a>
+    <a class="btn btn-outline-primary btn-lg" href="/auth/login">
+      <i class="bi bi-box-arrow-in-right"></i> Fazer Login
+    </a>
+  </div>
+</div>
+
+<div class="row mt-5">
+  <div class="col-md-4 mb-4">
+    <div class="stat-card success text-center">
+      <div class="stat-label">📊 Análise Detalhada</div>
+      <div class="stat-value">Dashboard</div>
+      <p class="text-muted mt-3">Visualize seus gastos e receitas com gráficos interativos e relatórios em tempo real.</p>
+    </div>
+  </div>
+  <div class="col-md-4 mb-4">
+    <div class="stat-card info text-center">
+      <div class="stat-label">💳 Categorização</div>
+      <div class="stat-value">Organizado</div>
+      <p class="text-muted mt-3">Organize suas transações por categorias e acompanhe seus hábitos de gasto.</p>
+    </div>
+  </div>
+  <div class="col-md-4 mb-4">
+    <div class="stat-card warning text-center">
+      <div class="stat-label">📧 Relatórios</div>
+      <div class="stat-value">Automático</div>
+      <p class="text-muted mt-3">Receba relatórios mensais em PDF automaticamente no seu e-mail.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-5">
+  <div class="card-body text-center">
+    <h3 class="mb-4">🎯 Funcionalidades Principais</h3>
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <h5>📈 Dashboard Interativo</h5>
+        <p class="text-muted">Visualize gráficos de receitas e despesas com dados atualizados em tempo real.</p>
+      </div>
+      <div class="col-md-6 mb-3">
+        <h5>💼 Gestão Completa</h5>
+        <p class="text-muted">Adicione, edite e exclua transações com facilidade e segurança.</p>
+      </div>
+      <div class="col-md-6 mb-3">
+        <h5>📊 Relatórios Detalhados</h5>
+        <p class="text-muted">Gere relatórios mensais completos e exporte em PDF.</p>
+      </div>
+      <div class="col-md-6 mb-3">
+        <h5>🔒 Segurança Total</h5>
+        <p class="text-muted">Seus dados estão protegidos com criptografia de ponta.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

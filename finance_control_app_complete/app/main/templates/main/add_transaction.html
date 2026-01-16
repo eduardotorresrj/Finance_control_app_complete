@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card fade-in">
+  <div class="card-header">
+    <h3 class="mb-0"><i class="bi bi-plus-circle"></i> Nova Transação</h3>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.type.label(class_='form-label') }}
+          {{ form.type(class_='form-select') }}
+          {% if form.type.errors %}
+            <div class="text-danger small">{{ form.type.errors[0] }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.category.label(class_='form-label') }}
+          {{ form.category(class_='form-select') }}
+          {% if form.category.errors %}
+            <div class="text-danger small">{{ form.category.errors[0] }}</div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        {{ form.custom_category.label(class_='form-label') }}
+        {{ form.custom_category(class_='form-control', placeholder='Digite uma nova categoria (opcional)') }}
+        <small class="form-text text-muted">Use este campo para criar uma categoria personalizada caso não encontre na lista acima</small>
+        {% if form.custom_category.errors %}
+          <div class="text-danger small">{{ form.custom_category.errors[0] }}</div>
+        {% endif %}
+      </div>
+      
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.amount.label(class_='form-label') }}
+          <div class="input-group">
+            <span class="input-group-text">R$</span>
+            {{ form.amount(class_='form-control', placeholder='0.00', step='0.01') }}
+          </div>
+          {% if form.amount.errors %}
+            <div class="text-danger small">{{ form.amount.errors[0] }}</div>
+          {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.date.label(class_='form-label') }}
+          {{ form.date(class_='form-control') }}
+          {% if form.date.errors %}
+            <div class="text-danger small">{{ form.date.errors[0] }}</div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        {{ form.payment_method.label(class_='form-label') }}
+        {{ form.payment_method(class_='form-select') }}
+        <small class="form-text text-muted">
+          <strong>💡 Importante:</strong> Selecione "Cartão Alimentação" para despesas que não afetam seu salário (como compras no mercado)
+        </small>
+        {% if form.payment_method.errors %}
+          <div class="text-danger small">{{ form.payment_method.errors[0] }}</div>
+        {% endif %}
+      </div>
+      
+      <div class="mb-3">
+        {{ form.description.label(class_='form-label') }}
+        {{ form.description(class_='form-control', rows='3', placeholder='Descrição da transação (opcional)...') }}
+        {% if form.description.errors %}
+          <div class="text-danger small">{{ form.description.errors[0] }}</div>
+        {% endif %}
+      </div>
+      
+      <div class="d-flex gap-2">
+        {{ form.submit(class_='btn btn-success') }}
+        <a href="/dashboard" class="btn btn-secondary">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

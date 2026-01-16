@@ -1,0 +1,487 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="text-white">📊 Análise Comparativa</h2>
+  <a class="btn btn-info" href="/reports/download">
+    <i class="bi bi-download"></i> Baixar Relatório
+  </a>
+</div>
+
+<!-- Comparação Mensal -->
+<div class="card fade-in mb-4">
+  <div class="card-header">
+    <h4 class="mb-0"><i class="bi bi-graph-up"></i> Comparação dos Últimos 6 Meses</h4>
+  </div>
+  <div class="card-body">
+    <div id="monthlyChartContainer">
+      <canvas id="monthlyChart" height="100"></canvas>
+    </div>
+    <div id="monthlyChartNoData" class="d-none text-center p-5">
+      <i class="bi bi-bar-chart text-muted" style="font-size: 3rem;"></i>
+      <h5 class="mt-3 text-muted">Não há dados suficientes para o gráfico</h5>
+      <p class="text-muted">Adicione transações para ver a análise mensal.</p>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Gastos por Categoria -->
+  <div class="col-md-6 mb-4">
+    <div class="card fade-in">
+      <div class="card-header">
+        <h4 class="mb-0"><i class="bi bi-pie-chart"></i> Top 10 Categorias (Últimos 3 Meses)</h4>
+      </div>
+      <div class="card-body">
+        <div id="categoryChartContainer">
+          <canvas id="categoryChart"></canvas>
+        </div>
+        <div id="categoryChartNoData" class="d-none text-center p-5">
+          <i class="bi bi-pie-chart text-muted" style="font-size: 3rem;"></i>
+          <h5 class="mt-3 text-muted">Não há despesas para análise</h5>
+          <p class="text-muted">Adicione despesas para ver a distribuição por categoria.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gastos por Forma de Pagamento -->
+  <div class="col-md-6 mb-4">
+    <div class="card fade-in">
+      <div class="card-header">
+        <h4 class="mb-0"><i class="bi bi-wallet2"></i> Gastos por Forma de Pagamento</h4>
+      </div>
+      <div class="card-body">
+        <div id="paymentChartContainer">
+          <canvas id="paymentChart"></canvas>
+        </div>
+        <div id="paymentChartNoData" class="d-none text-center p-5">
+          <i class="bi bi-wallet text-muted" style="font-size: 3rem;"></i>
+          <h5 class="mt-3 text-muted">Não há dados de pagamento</h5>
+          <p class="text-muted">Adicione despesas com métodos de pagamento para ver a análise.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela de Resumo Mensal -->
+<div class="card fade-in">
+  <div class="card-header">
+    <h4 class="mb-0"><i class="bi bi-table"></i> Resumo Mensal</h4>
+  </div>
+  <div class="card-body">
+    {% if months_data and months_data|length > 0 %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Mês</th>
+            <th class="text-end">Receitas</th>
+            <th class="text-end">Despesas</th>
+            <th class="text-end">Saldo</th>
+            <th class="text-end">Economia %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for month in months_data %}
+          <tr>
+            <td><strong>{{ months_labels[loop.index0] }}</strong></td>
+            <td class="text-end text-success">R$ {{ "{:,.2f}".format(month.income) }}</td>
+            <td class="text-end text-danger">R$ {{ "{:,.2f}".format(month.expense) }}</td>
+            <td class="text-end {% if month.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+              R$ {{ "{:,.2f}".format(month.balance) }}
+            </td>
+            <td class="text-end">
+              {% if month.income > 0 %}
+                <span class="badge {% if (month.balance / month.income * 100) >= 20 %}bg-success{% elif (month.balance / month.income * 100) >= 10 %}bg-warning{% else %}bg-danger{% endif %}">
+                  {{ "{:.1f}".format(month.balance / month.income * 100) }}%
+                </span>
+              {% else %}
+                <span class="badge bg-secondary">-</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center p-5">
+      <i class="bi bi-table text-muted" style="font-size: 3rem;"></i>
+      <h5 class="mt-3 text-muted">Não há dados para análise mensal</h5>
+      <p class="text-muted">Adicione transações para ver o resumo mensal.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+// DEBUG: Verificar dados recebidos
+console.log('=== DEBUG ANALYTICS ===');
+console.log('Months labels:', {{ months_labels|tojson|safe }});
+console.log('Months data:', {{ months_data|tojson|safe }});
+console.log('Categories:', {{ top_categories|tojson|safe }});
+console.log('Payment methods:', {{ payment_methods|tojson|safe }});
+
+// Processar dados com validações robustas
+const months = {{ months_labels|tojson|safe }} || [];
+const monthsData = {{ months_data|tojson|safe }} || [];
+const categories = {{ top_categories|tojson|safe }} || [];
+const paymentMethods = {{ payment_methods|tojson|safe }} || [];
+
+// Função para converter valores para número com segurança
+function safeNumber(value) {
+  if (value === null || value === undefined || value === '') return 0;
+  const num = parseFloat(value);
+  return isNaN(num) ? 0 : num;
+}
+
+// Função para acessar propriedades de objeto com segurança
+function safeGet(obj, prop, defaultValue = 0) {
+  if (!obj || typeof obj !== 'object') return defaultValue;
+  return obj[prop] !== undefined ? obj[prop] : defaultValue;
+}
+
+// Processar dados mensais - CORREÇÃO AQUI: usando safeGet em vez de ?.
+const incomes = Array.isArray(monthsData) ? monthsData.map(m => safeNumber(safeGet(m, 'income'))) : [];
+const expenses = Array.isArray(monthsData) ? monthsData.map(m => safeNumber(safeGet(m, 'expense'))) : [];
+const balances = Array.isArray(monthsData) ? monthsData.map(m => safeNumber(safeGet(m, 'balance'))) : [];
+
+// Verificar se há dados para gráfico mensal
+const hasMonthlyData = months.length > 0 &&
+                      (incomes.some(v => v > 0) || expenses.some(v => v > 0));
+
+// Processar categorias
+const categoriesLabels = [];
+const amountsCategories = [];
+
+if (Array.isArray(categories) && categories.length > 0) {
+  categories.forEach(item => {
+    if (item && Array.isArray(item) && item.length >= 2) {
+      const label = item[0] || 'Sem categoria';
+      const value = safeNumber(item[1]);
+      if (value > 0) {
+        categoriesLabels.push(label);
+        amountsCategories.push(value);
+      }
+    }
+  });
+}
+
+// Verificar se há dados para gráfico de categorias
+const hasCategoryData = categoriesLabels.length > 0 &&
+                       amountsCategories.some(v => v > 0);
+
+// Processar métodos de pagamento
+const paymentLabels = [];
+const amountsPayments = [];
+
+if (Array.isArray(paymentMethods) && paymentMethods.length > 0) {
+  paymentMethods.forEach(item => {
+    if (item && Array.isArray(item) && item.length >= 2) {
+      const method = item[0] || '';
+      const value = safeNumber(item[1]);
+      if (value > 0 && method) {
+        // Traduzir métodos de pagamento
+        const methodDict = {
+          'dinheiro': 'Dinheiro',
+          'debito': 'Débito',
+          'credito': 'Crédito',
+          'pix': 'PIX',
+          'cartao_alimentacao': 'Cartão Alimentação'
+        };
+        const label = methodDict[method] || method;
+        paymentLabels.push(label);
+        amountsPayments.push(value);
+      }
+    }
+  });
+}
+
+// Verificar se há dados para gráfico de pagamentos
+const hasPaymentData = paymentLabels.length > 0 &&
+                      amountsPayments.some(v => v > 0);
+
+// DEBUG: Mostrar dados processados
+console.log('=== DADOS PROCESSADOS ===');
+console.log('Tem dados mensais?', hasMonthlyData);
+console.log('Tem dados de categorias?', hasCategoryData);
+console.log('Tem dados de pagamentos?', hasPaymentData);
+console.log('Categorias encontradas:', categoriesLabels);
+console.log('Valores categorias:', amountsCategories);
+console.log('Receitas:', incomes);
+console.log('Despesas:', expenses);
+console.log('Saldos:', balances);
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Mostrar/ocultar mensagens de "sem dados"
+  if (!hasMonthlyData) {
+    document.getElementById('monthlyChartContainer').classList.add('d-none');
+    document.getElementById('monthlyChartNoData').classList.remove('d-none');
+  }
+
+  if (!hasCategoryData) {
+    document.getElementById('categoryChartContainer').classList.add('d-none');
+    document.getElementById('categoryChartNoData').classList.remove('d-none');
+  }
+
+  if (!hasPaymentData) {
+    document.getElementById('paymentChartContainer').classList.add('d-none');
+    document.getElementById('paymentChartNoData').classList.remove('d-none');
+  }
+
+  // Gráfico de Comparação Mensal
+  if (hasMonthlyData) {
+    const monthlyCtx = document.getElementById('monthlyChart');
+    if (monthlyCtx) {
+      try {
+        new Chart(monthlyCtx, {
+          type: 'line',
+          data: {
+            labels: months,
+            datasets: [
+              {
+                label: 'Receitas',
+                data: incomes,
+                borderColor: 'rgb(16, 185, 129)',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 2
+              },
+              {
+                label: 'Despesas',
+                data: expenses,
+                borderColor: 'rgb(239, 68, 68)',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 2
+              },
+              {
+                label: 'Saldo',
+                data: balances,
+                borderColor: 'rgb(59, 130, 246)',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true,
+                borderWidth: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  font: {
+                    size: 12,
+                    family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                  }
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return context.dataset.label + ': R$ ' +
+                           context.parsed.y.toFixed(2).replace('.', ',');
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: {
+                  display: false
+                },
+                ticks: {
+                  font: {
+                    size: 11
+                  }
+                }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return 'R$ ' + value.toFixed(2).replace('.', ',');
+                  },
+                  font: {
+                    size: 11
+                  }
+                }
+              }
+            }
+          }
+        });
+        console.log('Gráfico mensal criado com sucesso');
+      } catch (error) {
+        console.error('Erro ao criar gráfico mensal:', error);
+        document.getElementById('monthlyChartContainer').classList.add('d-none');
+        document.getElementById('monthlyChartNoData').classList.remove('d-none');
+      }
+    }
+  }
+
+  // Gráfico de Pizza - Categorias
+  if (hasCategoryData) {
+    const categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx) {
+      try {
+        new Chart(categoryCtx, {
+          type: 'doughnut',
+          data: {
+            labels: categoriesLabels,
+            datasets: [{
+              data: amountsCategories,
+              backgroundColor: [
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(139, 92, 246, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(14, 165, 233, 0.8)',
+                'rgba(34, 197, 94, 0.8)',
+                'rgba(251, 146, 60, 0.8)',
+                'rgba(99, 102, 241, 0.8)'
+              ],
+              borderWidth: 1,
+              borderColor: '#fff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  font: {
+                    size: 11
+                  },
+                  padding: 15,
+                  boxWidth: 12
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = 'R$ ' + context.parsed.toFixed(2).replace('.', ',');
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ?
+                      ((context.parsed / total) * 100).toFixed(1) : '0.0';
+                    return label + ': ' + value + ' (' + percentage + '%)';
+                  }
+                }
+              }
+            },
+            cutout: '50%'
+          }
+        });
+        console.log('Gráfico de categorias criado com sucesso');
+      } catch (error) {
+        console.error('Erro ao criar gráfico de categorias:', error);
+        document.getElementById('categoryChartContainer').classList.add('d-none');
+        document.getElementById('categoryChartNoData').classList.remove('d-none');
+      }
+    }
+  }
+
+  // Gráfico de Pizza - Formas de Pagamento
+  if (hasPaymentData) {
+    const paymentCtx = document.getElementById('paymentChart');
+    if (paymentCtx) {
+      try {
+        new Chart(paymentCtx, {
+          type: 'doughnut',
+          data: {
+            labels: paymentLabels,
+            datasets: [{
+              data: amountsPayments,
+              backgroundColor: [
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(139, 92, 246, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(147, 51, 234, 0.8)',
+                'rgba(14, 165, 233, 0.8)'
+              ],
+              borderWidth: 1,
+              borderColor: '#fff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  font: {
+                    size: 11
+                  },
+                  padding: 15,
+                  boxWidth: 12
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = 'R$ ' + context.parsed.toFixed(2).replace('.', ',');
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ?
+                      ((context.parsed / total) * 100).toFixed(1) : '0.0';
+                    return label + ': ' + value + ' (' + percentage + '%)';
+                  }
+                }
+              }
+            },
+            cutout: '50%'
+          }
+        });
+        console.log('Gráfico de pagamentos criado com sucesso');
+      } catch (error) {
+        console.error('Erro ao criar gráfico de pagamentos:', error);
+        document.getElementById('paymentChartContainer').classList.add('d-none');
+        document.getElementById('paymentChartNoData').classList.remove('d-none');
+      }
+    }
+  }
+});
+</script>
+
+<!-- Estilos adicionais -->
+<style>
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+}
+
+#monthlyChartNoData,
+#categoryChartNoData,
+#paymentChartNoData {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.table th {
+  font-weight: 600;
+  background-color: #f8f9fa;
+}
+
+.badge {
+  font-size: 0.85em;
+  padding: 0.35em 0.65em;
+}
+</style>
+{% endblock %}

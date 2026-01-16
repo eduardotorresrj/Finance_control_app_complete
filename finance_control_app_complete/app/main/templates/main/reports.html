@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="text-white">📊 Relatório Mensal</h2>
+  <a class="btn btn-danger" href="/reports/download">
+    <i class="bi bi-file-earmark-pdf"></i> Baixar PDF
+  </a>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-4 mb-3">
+    <div class="stat-card success fade-in">
+      <div class="stat-label">💰 Total Receitas</div>
+      <div class="stat-value">R$ {{ "{:,.2f}".format(total_income) }}</div>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="stat-card danger fade-in">
+      <div class="stat-label">💸 Total Despesas</div>
+      <div class="stat-value">R$ {{ "{:,.2f}".format(total_expenses) }}</div>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="stat-card info fade-in">
+      <div class="stat-label">💵 Saldo do Mês</div>
+      <div class="stat-value">R$ {{ "{:,.2f}".format(total_income - total_expenses) }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card fade-in">
+  <div class="card-header">
+    <h4 class="mb-0"><i class="bi bi-list-ul"></i> Todas as Transações do Mês</h4>
+  </div>
+  <div class="card-body">
+    {% if transactions %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Categoria</th>
+            <th>Descrição</th>
+            <th class="text-end">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+          <tr>
+            <td>{{ t.date.strftime('%d/%m/%Y') }}</td>
+            <td>
+              {% if t.type == 'income' %}
+                <span class="badge badge-income">Receita</span>
+              {% else %}
+                <span class="badge badge-expense">Despesa</span>
+              {% endif %}
+            </td>
+            <td><strong>{{ t.category }}</strong></td>
+            <td>{{ t.description or '-' }}</td>
+            <td class="text-end">
+              <strong class="{% if t.type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                {% if t.type == 'income' %}+{% else %}-{% endif %} R$ {{ "{:,.2f}".format(t.amount) }}
+              </strong>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="table-active">
+            <td colspan="4" class="text-end"><strong>Saldo Total:</strong></td>
+            <td class="text-end">
+              <strong class="{% if (total_income - total_expenses) >= 0 %}text-success{% else %}text-danger{% endif %}">
+                R$ {{ "{:,.2f}".format(total_income - total_expenses) }}
+              </strong>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <h5>Nenhuma transação este mês</h5>
+      <p class="text-muted">Não há transações para exibir no relatório mensal.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
